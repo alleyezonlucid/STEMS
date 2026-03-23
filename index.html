@@ -34,9 +34,10 @@ body{
 .hdr{
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 24px;border-bottom:1px solid var(--brd);flex-shrink:0;
+  position:relative;
 }
 .brand{font-size:9px;font-weight:700;letter-spacing:.35em;color:var(--brd2);text-transform:uppercase;user-select:none;}
-.title{font-size:13px;font-weight:600;letter-spacing:.14em;color:#c8ccd8;text-transform:uppercase;}
+.title{font-size:13px;font-weight:600;letter-spacing:.14em;color:#c8ccd8;text-transform:uppercase;position:absolute;left:50%;transform:translateX(-50%);}
 .led-row{display:flex;align-items:center;gap:6px;font-size:8px;font-weight:600;letter-spacing:.2em;color:var(--brd2);min-width:72px;justify-content:flex-end;}
 .led{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s,box-shadow .3s;}
 .led.loading{background:#f5a623;box-shadow:0 0 6px #f5a62380;animation:blink .7s ease-in-out infinite;}
@@ -166,14 +167,21 @@ body{
 .time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt2);min-width:36px;flex-shrink:0;}
 .time.r{text-align:right;}
 .prog{
-  flex:1;height:2px;background:var(--brd2);
-  border-radius:1px;cursor:pointer;position:relative;overflow:visible;
-  padding:12px 0;margin:-12px 0;
+  flex:1;height:24px;background:transparent;
+  cursor:pointer;position:relative;overflow:visible;
+  display:flex;align-items:center;
+}
+/* The visible 1px track line */
+.prog::before{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  height:1px;background:var(--brd2);
+  transform:translateY(-50%);border-radius:1px;
 }
 .prog-fill{
-  height:100%;
-  background:rgba(255,255,255,0.15);
-  border-radius:1px;pointer-events:none;position:relative;
+  position:absolute;left:0;top:50%;
+  height:1px;transform:translateY(-50%);
+  background:rgba(255,255,255,0.2);
+  border-radius:1px;pointer-events:none;
 }
 .prog-fill::after{
   content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);
@@ -235,11 +243,9 @@ body{
     <span class="time r" id="tot">0:00</span>
   </div>
   <div class="controls">
-    <button class="ctrl"     id="btn-rst"  disabled>⏮ RST</button>
     <button class="ctrl"     id="btn-back" disabled>−15s</button>
     <button class="play-btn" id="btn-play" disabled>▶</button>
     <button class="ctrl"     id="btn-fwd"  disabled>+15s</button>
-    <button class="ctrl"     id="btn-end"  disabled>END ⏭</button>
   </div>
 </div>
 
@@ -437,8 +443,7 @@ function drawWaveform(canvas, buffer, color) {
     STEMS.forEach((s, i) => drawWaveform(wfCanvases[i], channels[i].buf, s.color));
   });
 
-  ["btn-rst","btn-back","btn-play","btn-fwd","btn-end"].forEach(id =>
-    document.getElementById(id).disabled = false
+  ["btn-back","btn-play","btn-fwd"].forEach(id =>
   );
 })();
 
@@ -509,10 +514,8 @@ function seek(t) {
 }
 
 document.getElementById("btn-play").addEventListener("click", () => playing ? pause() : play());
-document.getElementById("btn-rst") .addEventListener("click", () => seek(0));
 document.getElementById("btn-back").addEventListener("click", () => seek(Math.max(0, curT-15)));
 document.getElementById("btn-fwd") .addEventListener("click", () => seek(Math.min(dur, curT+15)));
-document.getElementById("btn-end") .addEventListener("click", () => seek(dur));
 
 // Progress bar: click + drag (mouse + touch)
 function seekFromProgX(clientX) {
