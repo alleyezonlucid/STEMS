@@ -74,18 +74,17 @@ body{
   background:var(--surf);
   border-right:1px solid var(--brd);
   display:flex;flex-direction:column;justify-content:center;
-  padding:10px 12px 10px 14px;gap:7px;
+  padding:8px 12px 8px 14px;gap:6px;
   position:relative;
 }
 .track-accent{
   position:absolute;left:0;top:0;bottom:0;
   width:2px;border-radius:0;
 }
-.track-info{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.track-info{display:flex;flex-direction:column;gap:5px;}
 .track-name{
-  font-size:11px;font-weight:700;letter-spacing:.16em;
+  font-size:11px;font-weight:700;letter-spacing:.14em;
   text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  flex:1;
 }
 .track-ms{display:flex;gap:5px;}
 .btn{
@@ -169,6 +168,8 @@ body{
 .prog{
   flex:1;height:3px;background:var(--brd2);
   border-radius:1.5px;cursor:pointer;position:relative;overflow:visible;
+  /* Bigger touch target without visual change */
+  padding:10px 0;margin:-10px 0;
 }
 .prog-fill{
   height:100%;
@@ -262,10 +263,19 @@ const wfImageData = [];
 const AC = window.AudioContext || window.webkitAudioContext;
 const ctx = new AC();
 
-// iOS Safari creates AudioContext in 'suspended' state until a user gesture
-function resumeCtx() { if (ctx.state === 'suspended') ctx.resume(); }
-document.addEventListener('touchstart', resumeCtx, { once: true });
-document.addEventListener('click',      resumeCtx, { once: true });
+// iOS silent mode fix:
+// iOS treats Web Audio as "ambient" by default — muted by the hardware switch.
+// Playing a silent <audio> element on first gesture switches the AVAudioSession
+// to "playback" category, which ignores the mute switch. Web Audio inherits it.
+const SILENT_MP3 = "data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA//8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI";
+const silentAudio = new Audio(SILENT_MP3);
+
+function unlockAudio() {
+  silentAudio.play().catch(() => {});
+  if (ctx.state === 'suspended') ctx.resume();
+}
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click',      unlockAudio, { once: true });
 const master = ctx.createGain(); master.gain.value = 0.88;
 
 // Brick-wall limiter — prevents inter-stem summing from ever clipping
@@ -333,15 +343,15 @@ STEMS.forEach((s, i) => {
   document.getElementById(`s-${i}`).addEventListener("click", () => toggleSolo(i));
   document.getElementById(`vol-${i}`).addEventListener("input", e => setVol(i, parseInt(e.target.value)));
 
-  // Seek on click or touch in waveform
+  // Seek on click or drag (mouse + touch) in waveform
   const wfWrap = document.getElementById(`wf-wrap-${i}`);
-  function seekFromEvent(e) {
-    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+  function seekFromX(clientX) {
     const r = wfWrap.getBoundingClientRect();
-    seek(((touch.clientX - r.left) / r.width) * dur);
+    seek(Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * dur);
   }
-  wfWrap.addEventListener("click",      seekFromEvent);
-  wfWrap.addEventListener("touchend",   e => { e.preventDefault(); seekFromEvent(e); }, { passive: false });
+  wfWrap.addEventListener("click", e => seekFromX(e.clientX));
+  wfWrap.addEventListener("touchstart", e => { e.preventDefault(); seekFromX(e.touches[0].clientX); }, { passive: false });
+  wfWrap.addEventListener("touchmove",  e => { e.preventDefault(); seekFromX(e.touches[0].clientX); }, { passive: false });
 });
 
 // ── Draw waveform ──────────────────────────────────────────────────────────
@@ -505,13 +515,15 @@ document.getElementById("btn-back").addEventListener("click", () => seek(Math.ma
 document.getElementById("btn-fwd") .addEventListener("click", () => seek(Math.min(dur, curT+15)));
 document.getElementById("btn-end") .addEventListener("click", () => seek(dur));
 
-function seekFromProg(e) {
-  const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+// Progress bar: click + drag (mouse + touch)
+function seekFromProgX(clientX) {
   const r = document.getElementById("prog").getBoundingClientRect();
-  seek(((touch.clientX - r.left) / r.width) * dur);
+  seek(Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * dur);
 }
-document.getElementById("prog").addEventListener("click",    seekFromProg);
-document.getElementById("prog").addEventListener("touchend", e => { e.preventDefault(); seekFromProg(e); }, { passive: false });
+const progEl = document.getElementById("prog");
+progEl.addEventListener("click",      e => seekFromProgX(e.clientX));
+progEl.addEventListener("touchstart", e => { e.preventDefault(); seekFromProgX(e.touches[0].clientX); }, { passive: false });
+progEl.addEventListener("touchmove",  e => { e.preventDefault(); seekFromProgX(e.touches[0].clientX); }, { passive: false });
 
 // ── Gains ──────────────────────────────────────────────────────────────────
 function applyGains() {
