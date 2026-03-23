@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>STEMS — California Ride</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <style>
@@ -14,13 +14,20 @@
   --hi:#4a72f5;--hi2:#6088ff;
   --track-h:100px;
   --panel-w:172px;
+  --hdr-h:52px;
+  --transport-h:110px;
 }
-html,body{height:100%;background:var(--bg);}
+html{height:100%;}
 body{
   font-family:'Barlow Condensed',sans-serif;color:var(--txt);
-  display:flex;flex-direction:column;min-height:100vh;
+  background:var(--bg);
   background-image:radial-gradient(rgba(255,255,255,0.012) 1px,transparent 1px);
-  background-size:20px 20px;overflow:hidden;
+  background-size:20px 20px;
+  /* Use dvh so mobile browser chrome is excluded */
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  display:flex;flex-direction:column;
+  overflow:hidden;
 }
 
 /* ── HEADER ── */
@@ -150,8 +157,11 @@ body{
 .transport{
   border-top:1px solid var(--brd);
   background:var(--surf);
-  padding:12px 24px 16px;
-  display:flex;flex-direction:column;gap:8px;flex-shrink:0;
+  padding:12px 24px max(16px, env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:10px;
+  flex-shrink:0;
+  /* Stick to bottom so it's never hidden behind browser chrome */
+  position:sticky;bottom:0;z-index:10;
 }
 .timeline{display:flex;align-items:center;gap:10px;}
 .time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt2);min-width:36px;flex-shrink:0;}
@@ -191,9 +201,9 @@ body{
 
 @media(max-width:600px){
   :root{--panel-w:150px;--track-h:96px;}
-  .transport{padding:10px 14px 16px;}
+  .transport{padding:10px 14px max(14px, env(safe-area-inset-bottom));}
   .hdr{padding:10px 14px;}
-  .ctrl{padding:0 8px;font-size:10px;height:32px;}
+  .ctrl{padding:0 8px;font-size:10px;height:34px;}
   .play-btn{width:48px;height:48px;font-size:18px;}
   .track-name{font-size:10px;}
 }
