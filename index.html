@@ -66,18 +66,19 @@ body{
   width:var(--panel-w);flex-shrink:0;
   background:var(--surf);
   border-right:1px solid var(--brd);
-  display:flex;align-items:center;
-  padding:0 12px;gap:10px;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:10px 12px 10px 14px;gap:7px;
   position:relative;
 }
 .track-accent{
   position:absolute;left:0;top:0;bottom:0;
   width:2px;border-radius:0;
 }
-.track-info{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+.track-info{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .track-name{
   font-size:11px;font-weight:700;letter-spacing:.16em;
   text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex:1;
 }
 .track-ms{display:flex;gap:5px;}
 .btn{
@@ -93,30 +94,28 @@ body{
 .btn.s-on  {background:rgba(240,160,0,.15);color:#f5a623;border-color:rgba(240,160,0,.38);}
 
 /* VOLUME */
-.vol-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
-.vol-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt2);letter-spacing:.04em;}
+.vol-wrap{display:flex;align-items:center;gap:6px;width:100%;}
+.vol-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt2);letter-spacing:.04em;min-width:22px;text-align:right;}
 .vol-slider{
-  writing-mode:vertical-lr;direction:rtl;
-  width:22px;height:58px;
+  flex:1;height:18px;
   -webkit-appearance:none;appearance:none;
   background:transparent;cursor:pointer;outline:none;padding:0;margin:0;
 }
 .vol-slider::-webkit-slider-runnable-track{
-  width:4px;background:var(--brd2);border-radius:2px;
+  height:3px;background:var(--brd2);border-radius:1.5px;
 }
 .vol-slider::-webkit-slider-thumb{
   -webkit-appearance:none;
-  width:20px;height:13px;
-  margin-left:-8px;
-  background:linear-gradient(to right,#2e3240,#22252e);
-  border:1px solid #4a4d5e;border-radius:3px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 5px rgba(0,0,0,.55);
+  width:18px;height:18px;margin-top:-7.5px;
+  background:linear-gradient(to bottom,#2e3240,#22252e);
+  border:1px solid #4a4d5e;border-radius:50%;
+  box-shadow:0 2px 5px rgba(0,0,0,.55);
 }
-.vol-slider::-webkit-slider-thumb:hover{background:linear-gradient(to right,#383c4e,#2a2e3a);}
-.vol-slider::-moz-range-track{width:4px;background:var(--brd2);border-radius:2px;}
+.vol-slider::-webkit-slider-thumb:hover{background:linear-gradient(to bottom,#383c4e,#2a2e3a);}
+.vol-slider::-moz-range-track{height:3px;background:var(--brd2);border-radius:1.5px;}
 .vol-slider::-moz-range-thumb{
-  width:20px;height:13px;background:#2e3240;
-  border:1px solid #4a4d5e;border-radius:3px;cursor:pointer;
+  width:18px;height:18px;background:#2e3240;
+  border:1px solid #4a4d5e;border-radius:50%;cursor:pointer;
 }
 
 /* WAVEFORM */
@@ -191,11 +190,12 @@ body{
 .play-btn.on{background:rgba(30,58,153,.2);box-shadow:0 0 22px rgba(96,136,255,.22);}
 
 @media(max-width:600px){
-  :root{--panel-w:120px;--track-h:84px;}
+  :root{--panel-w:150px;--track-h:96px;}
   .transport{padding:10px 14px 16px;}
   .hdr{padding:10px 14px;}
-  .ctrl{padding:0 10px;font-size:10px;height:32px;}
-  .play-btn{width:46px;height:46px;font-size:17px;}
+  .ctrl{padding:0 8px;font-size:10px;height:32px;}
+  .play-btn{width:48px;height:48px;font-size:18px;}
+  .track-name{font-size:10px;}
 }
 </style>
 </head>
@@ -246,11 +246,16 @@ const STEMS = [
 // ── State ──────────────────────────────────────────────────────────────────
 const state = STEMS.map(() => ({ vol:1, muted:false, solo:false }));
 let playing=false, curT=0, dur=0, startAt=0, pauseAt=0, raf=null;
-const wfImageData = [];  // stored waveform imageData per track
+const wfImageData = [];
 
 // ── Audio ──────────────────────────────────────────────────────────────────
 const AC = window.AudioContext || window.webkitAudioContext;
 const ctx = new AC();
+
+// iOS Safari creates AudioContext in 'suspended' state until a user gesture
+function resumeCtx() { if (ctx.state === 'suspended') ctx.resume(); }
+document.addEventListener('touchstart', resumeCtx, { once: true });
+document.addEventListener('click',      resumeCtx, { once: true });
 const master = ctx.createGain(); master.gain.value = 0.88;
 
 // Brick-wall limiter — prevents inter-stem summing from ever clipping
@@ -317,10 +322,16 @@ STEMS.forEach((s, i) => {
   document.getElementById(`m-${i}`).addEventListener("click", () => toggleMute(i));
   document.getElementById(`s-${i}`).addEventListener("click", () => toggleSolo(i));
   document.getElementById(`vol-${i}`).addEventListener("input", e => setVol(i, parseInt(e.target.value)));
-  document.getElementById(`wf-wrap-${i}`).addEventListener("click", e => {
-    const r = e.currentTarget.getBoundingClientRect();
-    seek(((e.clientX - r.left) / r.width) * dur);
-  });
+
+  // Seek on click or touch in waveform
+  const wfWrap = document.getElementById(`wf-wrap-${i}`);
+  function seekFromEvent(e) {
+    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+    const r = wfWrap.getBoundingClientRect();
+    seek(((touch.clientX - r.left) / r.width) * dur);
+  }
+  wfWrap.addEventListener("click",      seekFromEvent);
+  wfWrap.addEventListener("touchend",   e => { e.preventDefault(); seekFromEvent(e); }, { passive: false });
 });
 
 // ── Draw waveform ──────────────────────────────────────────────────────────
@@ -483,10 +494,14 @@ document.getElementById("btn-rst") .addEventListener("click", () => seek(0));
 document.getElementById("btn-back").addEventListener("click", () => seek(Math.max(0, curT-15)));
 document.getElementById("btn-fwd") .addEventListener("click", () => seek(Math.min(dur, curT+15)));
 document.getElementById("btn-end") .addEventListener("click", () => seek(dur));
-document.getElementById("prog")    .addEventListener("click", e => {
+
+function seekFromProg(e) {
+  const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
   const r = document.getElementById("prog").getBoundingClientRect();
-  seek(((e.clientX - r.left) / r.width) * dur);
-});
+  seek(((touch.clientX - r.left) / r.width) * dur);
+}
+document.getElementById("prog").addEventListener("click",    seekFromProg);
+document.getElementById("prog").addEventListener("touchend", e => { e.preventDefault(); seekFromProg(e); }, { passive: false });
 
 // ── Gains ──────────────────────────────────────────────────────────────────
 function applyGains() {
