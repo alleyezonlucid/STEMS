@@ -380,12 +380,20 @@ function drawWaveform(canvas, buffer, color) {
   c.lineWidth = 1;
   c.beginPath(); c.moveTo(0, mid); c.lineTo(W, mid); c.stroke();
 
+  // Find peak for normalization
+  let peak = 0;
+  for (let k = 0; k < data.length; k++) {
+    const abs = Math.abs(data[k]);
+    if (abs > peak) peak = abs;
+  }
+  const norm = peak > 0 ? 1 / peak : 1;
+
   // waveform fill
   for (let x = 0; x < W; x++) {
     let mn = 1, mx = -1;
     const off = x * step;
     for (let j = 0; j < step && off+j < data.length; j++) {
-      const v = data[off + j];
+      const v = data[off + j] * norm;
       if (v < mn) mn = v;
       if (v > mx) mx = v;
     }
