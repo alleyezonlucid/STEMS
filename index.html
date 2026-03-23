@@ -2,178 +2,530 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>STEMS PRO</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>STEMS — California Ride</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <style>
-body{margin:0;background:#0a0a0c;color:#aaa;font-family:sans-serif;display:flex;flex-direction:column;height:100vh}
-button{cursor:pointer}
-.track{display:flex;border-bottom:1px solid #222}
-.panel{width:120px;padding:10px}
-.wf{flex:1;position:relative}
-canvas{width:100%;height:80px}
-.playhead{position:absolute;top:0;bottom:0;width:2px;background:white}
-.transport{padding:10px;border-top:1px solid #222}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080809;--surf:#0d0d10;--surf2:#111116;
+  --brd:#18181f;--brd2:#22222c;
+  --txt:#6a6d7e;--txt2:#3a3d4e;
+  --hi:#4a72f5;--hi2:#6088ff;
+  --track-h:100px;
+  --panel-w:120px;
+  --hdr-h:52px;
+  --transport-h:110px;
+}
+html{height:100%;}
+body{
+  font-family:'Barlow Condensed',sans-serif;color:var(--txt);
+  background:var(--bg);
+  background-image:radial-gradient(rgba(255,255,255,0.012) 1px,transparent 1px);
+  background-size:20px 20px;
+  /* Use dvh so mobile browser chrome is excluded */
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── HEADER ── */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;border-bottom:1px solid var(--brd);flex-shrink:0;
+  position:relative;
+}
+.brand{font-size:9px;font-weight:700;letter-spacing:.35em;color:var(--brd2);text-transform:uppercase;user-select:none;}
+.title{font-size:13px;font-weight:600;letter-spacing:.14em;color:#c8ccd8;text-transform:uppercase;position:absolute;left:50%;transform:translateX(-50%);}
+.led-row{display:flex;align-items:center;gap:6px;font-size:8px;font-weight:600;letter-spacing:.2em;color:var(--brd2);min-width:72px;justify-content:flex-end;}
+.led{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s,box-shadow .3s;}
+.led.loading{background:#f5a623;box-shadow:0 0 6px #f5a62380;animation:blink .7s ease-in-out infinite;}
+.led.ready  {background:#22c55e;box-shadow:0 0 6px #22c55e80;animation:blink 2.4s ease-in-out infinite;}
+.led.error  {background:#ef4444;box-shadow:0 0 6px #ef444480;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── LOADING ── */
+.overlay{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.load-label{font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--txt2);text-transform:uppercase;}
+.load-bar-wrap{width:220px;height:2px;background:var(--brd2);border-radius:1px;overflow:hidden;}
+.load-bar{height:100%;background:linear-gradient(90deg,#2244bb,var(--hi2));border-radius:1px;transition:width .3s;}
+.load-dots{display:flex;gap:8px;}
+.load-dot{width:6px;height:6px;border-radius:50%;opacity:.18;transition:opacity .3s,box-shadow .3s;}
+.load-dot.done{opacity:1;}
+
+/* ── TRACKS AREA ── */
+.tracks-area{
+  flex:1;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;min-height:0;
+}
+
+/* ── TRACK ROW ── */
+.track{
+  display:flex;align-items:stretch;
+  height:var(--track-h);flex-shrink:0;
+  border-bottom:1px solid var(--brd);
+  transition:opacity .18s;
+}
+.track.muted{opacity:.38;}
+
+/* LEFT PANEL */
+.track-panel{
+  width:var(--panel-w);flex-shrink:0;
+  background:var(--surf);
+  border-right:1px solid var(--brd);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:6px 8px 6px 12px;gap:5px;
+  position:relative;
+}
+.track-accent{
+  position:absolute;left:0;top:0;bottom:0;
+  width:2px;border-radius:0;
+}
+.track-info{display:flex;flex-direction:column;gap:5px;}
+.track-name{
+  font-size:9px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.track-ms{display:flex;gap:5px;}
+.btn{
+  width:40px;height:22px;
+  border:1px solid var(--brd2);background:transparent;
+  color:var(--txt2);font-family:'Barlow Condensed',sans-serif;
+  font-size:9px;font-weight:700;letter-spacing:.04em;border-radius:3px;
+  cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;
+}
+.btn:hover {color:var(--txt);border-color:#3a3d4e;background:rgba(255,255,255,.04);}
+.btn.m-on  {background:rgba(220,40,40,.2);color:#ff5050;border-color:rgba(220,40,40,.4);}
+.btn.s-on  {background:rgba(240,160,0,.15);color:#f5a623;border-color:rgba(240,160,0,.38);}
+
+/* VOLUME */
+.vol-wrap{display:flex;align-items:center;gap:6px;width:100%;}
+.vol-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt2);letter-spacing:.04em;min-width:22px;text-align:right;}
+.vol-slider{
+  flex:1;height:18px;
+  -webkit-appearance:none;appearance:none;
+  background:transparent;cursor:pointer;outline:none;padding:0;margin:0;
+}
+.vol-slider::-webkit-slider-runnable-track{
+  height:3px;background:var(--brd2);border-radius:1.5px;
+}
+.vol-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;height:18px;margin-top:-7.5px;
+  background:linear-gradient(to bottom,#2e3240,#22252e);
+  border:1px solid #4a4d5e;border-radius:50%;
+  box-shadow:0 2px 5px rgba(0,0,0,.55);
+}
+.vol-slider::-webkit-slider-thumb:hover{background:linear-gradient(to bottom,#383c4e,#2a2e3a);}
+.vol-slider::-moz-range-track{height:3px;background:var(--brd2);border-radius:1.5px;}
+.vol-slider::-moz-range-thumb{
+  width:18px;height:18px;background:#2e3240;
+  border:1px solid #4a4d5e;border-radius:50%;cursor:pointer;
+}
+
+/* WAVEFORM */
+.track-wf{
+  flex:1;position:relative;overflow:hidden;
+  background:var(--surf2);cursor:pointer;
+}
+.track-wf:hover .wf-canvas{opacity:.88;}
+.wf-canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:block;opacity:.72;transition:opacity .2s;
+}
+.played-overlay{
+  position:absolute;top:0;left:0;height:100%;
+  background:rgba(255,255,255,0.025);
+  pointer-events:none;
+}
+.playhead{
+  position:absolute;top:0;bottom:0;left:0;
+  width:1px;background:rgba(255,255,255,0.55);
+  pointer-events:none;
+  box-shadow:0 0 6px rgba(255,255,255,0.2);
+}
+.playhead::before{
+  content:'';position:absolute;top:0;left:-3px;
+  width:7px;height:7px;
+  background:white;border-radius:50%;
+  box-shadow:0 0 8px rgba(255,255,255,0.5);
+}
+
+/* ── TRANSPORT ── */
+.transport{
+  border-top:1px solid var(--brd);
+  background:var(--surf);
+  padding:8px 20px max(12px, env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:6px;
+  flex-shrink:0;
+  position:sticky;bottom:0;z-index:10;
+}
+.controls{display:flex;align-items:center;justify-content:center;gap:10px;}
+.ctrl{
+  height:30px;padding:0 14px;border:1px solid var(--brd2);background:transparent;
+  color:var(--txt2);font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:600;letter-spacing:.06em;
+  border-radius:4px;cursor:pointer;transition:all .13s;text-transform:uppercase;white-space:nowrap;
+}
+.ctrl:hover   {color:var(--txt);border-color:#3a3d4e;background:rgba(255,255,255,.04);}
+.ctrl:disabled{opacity:.28;cursor:not-allowed;}
+.play-btn{
+  width:44px;height:44px;border-radius:50%;
+  border:1.5px solid #1e3a99;background:rgba(30,58,153,.12);
+  color:#4060cc;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .18s;
+}
+.play-btn:hover  {background:rgba(30,58,153,.25);border-color:#2a50bb;color:var(--hi2);transform:scale(1.07);}
+.play-btn:disabled{opacity:.28;cursor:not-allowed;transform:none;}
+.play-btn.on{background:rgba(30,58,153,.2);box-shadow:0 0 22px rgba(96,136,255,.22);}
+
+@media(max-width:600px){
+  :root{--panel-w:110px;--track-h:96px;}
+  .transport{padding:10px 14px max(14px, env(safe-area-inset-bottom));}
+  .hdr{padding:10px 14px;}
+  .ctrl{padding:0 8px;font-size:9px;height:28px;}
+  .play-btn{width:40px;height:40px;font-size:15px;}
+  .track-name{font-size:10px;}
+}
 </style>
 </head>
 <body>
 
-<div id="tracks"></div>
+<header class="hdr">
+  <span class="brand">STEMS</span>
+  <span class="title">CALIFORNIA RIDE</span>
+  <div class="led-row">
+    <span class="led loading" id="led"></span>
+    <span id="led-label">0%</span>
+  </div>
+</header>
+
+<div class="overlay" id="overlay">
+  <div class="load-label">Loading stems...</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar" style="width:0%"></div></div>
+  <div class="load-dots" id="load-dots"></div>
+</div>
+
+<div class="tracks-area" id="tracks-area" style="display:none"></div>
+
 <div class="transport">
-<button id="play">▶</button>
+  <div class="controls">
+    <button class="play-btn" id="btn-play" disabled>▶</button>
+  </div>
 </div>
 
 <script>
-const FILES=[
-"ACORDES.mp3","BASS.mp3","DRUMS.mp3"
+const BASE  = "https://raw.githubusercontent.com/alleyezonlucid/STEMS/main";
+const STEMS = [
+  { id:"acordes", label:"ACORDES", color:"#3db8ff", url:`${BASE}/ACORDES.mp3` },
+  { id:"bass",    label:"BASS",    color:"#ff8c21", url:`${BASE}/BASS.mp3`    },
+  { id:"drums",   label:"DRUMS",   color:"#ff3d3d", url:`${BASE}/DRUMS.mp3`   },
+  { id:"juno",    label:"JUNO",    color:"#b87fff", url:`${BASE}/JUNO.mp3`    },
+  { id:"violin",  label:"VIOLIN",  color:"#21d494", url:`${BASE}/VIOLIN.mp3`  },
 ];
 
-const ctx=new (window.AudioContext||window.webkitAudioContext)();
-let buffers=[];
-let gains=[];
-let sources=[];
-let playing=false;
-let startTime=0;
-let pauseTime=0;
+// ── State ──────────────────────────────────────────────────────────────────
+const state = STEMS.map(() => ({ vol:1, muted:false, solo:false }));
+let playing=false, curT=0, dur=0, startAt=0, pauseAt=0, raf=null;
+const wfImageData = [];
 
-const master=ctx.createGain();
-master.gain.value=0.9;
+// ── Audio ──────────────────────────────────────────────────────────────────
+const AC = window.AudioContext || window.webkitAudioContext;
+const ctx = new AC();
 
-const comp=ctx.createDynamicsCompressor();
-comp.threshold.value=-1.5;
-comp.ratio.value=10;
-comp.knee.value=6;
+// iOS silent mode fix:
+// iOS treats Web Audio as "ambient" by default — muted by the hardware switch.
+// Playing a silent <audio> element on first gesture switches the AVAudioSession
+// to "playback" category, which ignores the mute switch. Web Audio inherits it.
+const SILENT_MP3 = "data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA//8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI";
+const silentAudio = new Audio(SILENT_MP3);
 
-master.connect(comp);
-comp.connect(ctx.destination);
+function unlockAudio() {
+  silentAudio.play().catch(() => {});
+  if (ctx.state === 'suspended') ctx.resume();
+}
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click',      unlockAudio, { once: true });
+const master = ctx.createGain(); master.gain.value = 0.88;
 
-FILES.forEach(()=>{
- const g=ctx.createGain();
- g.connect(master);
- gains.push(g);
+// Brick-wall limiter — prevents inter-stem summing from ever clipping
+const limiter = ctx.createDynamicsCompressor();
+limiter.threshold.value = -0.5;   // dBFS — engages just before 0
+limiter.knee.value      =  0;     // hard knee
+limiter.ratio.value     =  20;    // 20:1 ≈ brick wall
+limiter.attack.value    =  0.001; // 1ms — catches transients fast
+limiter.release.value   =  0.1;   // 100ms — transparent release
+master.connect(limiter);
+limiter.connect(ctx.destination);
+
+const channels = STEMS.map(() => {
+  const gain = ctx.createGain(); gain.gain.value = 1.0;
+  gain.connect(master);
+  return { gain, buf:null, src:null };
 });
 
-async function load(){
- for(let f of FILES){
-  const res=await fetch(f);
-  const buf=await ctx.decodeAudioData(await res.arrayBuffer());
-  buffers.push(buf);
- }
- buildUI();
-}
+// ── Build track DOM ────────────────────────────────────────────────────────
+const tracksArea = document.getElementById("tracks-area");
+const dotsEl     = document.getElementById("load-dots");
+const wfCanvases = [];
+const playheads  = [];
+const playedOverlays = [];
 
-function buildUI(){
- const wrap=document.getElementById("tracks");
- buffers.forEach((buf,i)=>{
-  const row=document.createElement("div");
-  row.className="track";
+STEMS.forEach((s, i) => {
+  // loading dot
+  const dot = document.createElement("div");
+  dot.className = "load-dot";
+  dot.style.cssText = `background:${s.color};color:${s.color};box-shadow:0 0 8px ${s.color};`;
+  dotsEl.appendChild(dot);
 
-  const panel=document.createElement("div");
-  panel.className="panel";
+  // track row
+  const track = document.createElement("div");
+  track.className = "track"; track.id = `track-${i}`;
+  track.innerHTML = `
+    <div class="track-panel">
+      <div class="track-accent" style="background:${s.color}"></div>
+      <div class="track-info">
+        <div class="track-name" style="color:${s.color}">${s.label}</div>
+        <div class="track-ms">
+          <button class="btn" id="m-${i}">MUTE</button>
+          <button class="btn" id="s-${i}">SOLO</button>
+        </div>
+      </div>
+      <div class="vol-wrap">
+        <input type="range" class="vol-slider" id="vol-${i}"
+               min="0" max="100" step="1" value="100" />
+        <div class="vol-label" id="vl-${i}">100</div>
+      </div>
+    </div>
+    <div class="track-wf" id="wf-wrap-${i}">
+      <canvas class="wf-canvas" id="wf-${i}"></canvas>
+      <div class="played-overlay" id="po-${i}" style="width:0%"></div>
+      <div class="playhead"       id="ph-${i}" style="left:0%"></div>
+    </div>
+  `;
+  tracksArea.appendChild(track);
 
-  const slider=document.createElement("input");
-  slider.type="range";
-  slider.min=0;slider.max=100;slider.value=100;
-  slider.oninput=e=>{
-    const v=Math.pow(e.target.value/100,2);
-    gains[i].gain.setTargetAtTime(v,ctx.currentTime,0.01);
-  };
+  wfCanvases.push(document.getElementById(`wf-${i}`));
+  playheads.push(document.getElementById(`ph-${i}`));
+  playedOverlays.push(document.getElementById(`po-${i}`));
 
-  panel.appendChild(slider);
+  document.getElementById(`m-${i}`).addEventListener("click", () => toggleMute(i));
+  document.getElementById(`s-${i}`).addEventListener("click", () => toggleSolo(i));
+  document.getElementById(`vol-${i}`).addEventListener("input", e => {
+    if (ctx.state === 'suspended') ctx.resume();
+    setVol(i, parseInt(e.target.value));
+  });
 
-  const wf=document.createElement("div");
-  wf.className="wf";
-
-  const canvas=document.createElement("canvas");
-  wf.appendChild(canvas);
-
-  const ph=document.createElement("div");
-  ph.className="playhead";
-  wf.appendChild(ph);
-
-  drawWave(canvas,buf);
-
-  wf.onclick=e=>{
-    const r=wf.getBoundingClientRect();
-    const pct=(e.clientX-r.left)/r.width;
-    seek(pct*buf.duration);
-  };
-
-  row.appendChild(panel);
-  row.appendChild(wf);
-  wrap.appendChild(row);
- });
-}
-
-function drawWave(canvas,buf){
- const c=canvas.getContext("2d");
- const w=canvas.width=canvas.offsetWidth;
- const h=canvas.height=canvas.offsetHeight;
- const data=buf.getChannelData(0);
- const step=Math.floor(data.length/w);
-
- for(let x=0;x<w;x++){
-  let min=1,max=-1;
-  for(let j=0;j<step;j++){
-    const v=data[(x*step)+j];
-    if(v<min)min=v;
-    if(v>max)max=v;
+  // Seek on click or drag (mouse + touch) in waveform
+  const wfWrap = document.getElementById(`wf-wrap-${i}`);
+  function seekFromX(clientX) {
+    const r = wfWrap.getBoundingClientRect();
+    seek(Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * dur);
   }
-  c.fillRect(x,(1+min)*h/2,1,Math.max(1,(max-min)*h/2));
- }
+  wfWrap.addEventListener("click", e => seekFromX(e.clientX));
+  wfWrap.addEventListener("touchstart", e => { e.preventDefault(); seekFromX(e.touches[0].clientX); }, { passive: false });
+  wfWrap.addEventListener("touchmove",  e => { e.preventDefault(); seekFromX(e.touches[0].clientX); }, { passive: false });
+});
+
+// ── Draw waveform ──────────────────────────────────────────────────────────
+function drawWaveform(canvas, buffer, color) {
+  const wrap  = canvas.parentElement;
+  const W     = wrap.clientWidth  || 800;
+  const H     = wrap.clientHeight || 88;
+  canvas.width  = W;
+  canvas.height = H;
+  const c    = canvas.getContext("2d");
+  const data = buffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(data.length / W));
+  const mid  = H / 2;
+
+  // background
+  c.fillStyle = "transparent";
+  c.clearRect(0, 0, W, H);
+
+  // center line
+  c.strokeStyle = color + "18";
+  c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, mid); c.lineTo(W, mid); c.stroke();
+
+  // waveform fill
+  for (let x = 0; x < W; x++) {
+    let mn = 1, mx = -1;
+    const off = x * step;
+    for (let j = 0; j < step && off+j < data.length; j++) {
+      const v = data[off + j];
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+    const yTop = Math.floor((1 - mx) / 2 * H);
+    const yBot = Math.ceil ((1 - mn) / 2 * H);
+    const h    = Math.max(1, yBot - yTop);
+
+    // gradient: bright core, faded edges
+    const grd = c.createLinearGradient(0, yTop, 0, yBot);
+    grd.addColorStop(0,   color + "22");
+    grd.addColorStop(0.4, color + "bb");
+    grd.addColorStop(0.5, color + "ff");
+    grd.addColorStop(0.6, color + "bb");
+    grd.addColorStop(1,   color + "22");
+    c.fillStyle = grd;
+    c.fillRect(x, yTop, 1, h);
+  }
+
+  // store for playhead redraws
+  wfImageData[wfCanvases.indexOf(canvas)] = c.getImageData(0, 0, W, H);
 }
 
-function start(offset=0){
- const t=ctx.currentTime+0.05;
- buffers.forEach((buf,i)=>{
-  const src=ctx.createBufferSource();
-  src.buffer=buf;
-  src.connect(gains[i]);
-  src.start(t,offset);
-  sources[i]=src;
- });
- startTime=t-offset;
- loop();
+// ── Load stems ─────────────────────────────────────────────────────────────
+(async () => {
+  const dots = dotsEl.querySelectorAll(".load-dot");
+  let maxDur = 0;
+  for (let i = 0; i < STEMS.length; i++) {
+    try {
+      const res = await fetch(STEMS[i].url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+      channels[i].buf = buf;
+      if (buf.duration > maxDur) { maxDur = buf.duration; dur = maxDur; }
+      dots[i].classList.add("done");
+      const pct = Math.round(((i+1)/STEMS.length)*100);
+      document.getElementById("load-bar").style.width  = pct+"%";
+      document.getElementById("led-label").textContent = pct+"%";
+    } catch(err) {
+      console.error("Stem load failed:", STEMS[i].label, err);
+      document.getElementById("led").className = "led error";
+      document.getElementById("led-label").textContent = "ERROR";
+      return;
+    }
+  }
+
+  // Show tracks, draw waveforms
+  document.getElementById("overlay").style.display     = "none";
+  document.getElementById("tracks-area").style.display = "flex";
+  document.getElementById("led").className             = "led ready";
+  document.getElementById("led-label").textContent     = "READY";
+
+  // Defer waveform draw so layout has settled
+  requestAnimationFrame(() => {
+    STEMS.forEach((s, i) => drawWaveform(wfCanvases[i], channels[i].buf, s.color));
+  });
+
+  ["btn-play"].forEach(id =>
+    document.getElementById(id).disabled = false
+  );
+})();
+
+// ── Playback ───────────────────────────────────────────────────────────────
+function startSrcs(offset) {
+  const now = ctx.currentTime;
+  channels.forEach(ch => {
+    try { ch.src?.stop(); } catch {}
+    if (!ch.buf) return;
+    const src = ctx.createBufferSource();
+    src.buffer = ch.buf; src.connect(ch.gain);
+    src.start(now, Math.max(0, Math.min(offset, ch.buf.duration - 0.001)));
+    ch.src = src;
+  });
+  startAt = now - offset;
 }
 
-function stop(){
- sources.forEach(s=>{try{s.stop()}catch{}});
- sources=[];
+function startTick() {
+  const tick = () => {
+    const elapsed = ctx.currentTime - startAt;
+    if (elapsed >= dur) { stopPlayback(); updateUI(0); return; }
+    updateUI(elapsed);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
 }
 
-function play(){
- ctx.resume();
- start(pauseTime);
- playing=true;
+function stopPlayback() {
+  playing = false; pauseAt = 0;
+  document.getElementById("btn-play").className   = "play-btn";
+  document.getElementById("btn-play").textContent = "▶";
+  cancelAnimationFrame(raf);
 }
 
-function pause(){
- pauseTime=ctx.currentTime-startTime;
- stop();
- playing=false;
+function updateUI(t) {
+  curT = t;
+  const pct = dur > 0 ? Math.min(100, (t / dur) * 100) : 0;
+  playheads.forEach(ph => ph.style.left = pct + "%");
+  playedOverlays.forEach(po => po.style.width = pct + "%");
 }
 
-function seek(t){
- pauseTime=t;
- if(playing){
-  stop();
-  start(t);
- }
+function play() {
+  if (ctx.state === "suspended") ctx.resume();
+  startSrcs(pauseAt); playing = true; startTick();
+  document.getElementById("btn-play").className   = "play-btn on";
+  document.getElementById("btn-play").textContent = "▶";
 }
 
-function loop(){
- if(!playing)return;
- const t=ctx.currentTime-startTime;
- document.querySelectorAll(".playhead").forEach(ph=>{
-  ph.style.left=(t/buffers[0].duration*100)+"%";
- });
- requestAnimationFrame(loop);
+function pause() {
+  pauseAt = ctx.currentTime - startAt;
+  channels.forEach(ch => { try { ch.src?.stop(); } catch {} });
+  cancelAnimationFrame(raf); playing = false;
+  document.getElementById("btn-play").className   = "play-btn";
+  document.getElementById("btn-play").textContent = "▶";
 }
 
-document.getElementById("play").onclick=()=>{
- if(!playing)play(); else pause();
-};
+function seek(t) {
+  const c = Math.max(0, Math.min(dur, t));
+  pauseAt = c; updateUI(c);
+  if (playing) {
+    cancelAnimationFrame(raf);
+    channels.forEach(ch => { try { ch.src?.stop(); } catch {} });
+    startSrcs(c); startTick();
+  }
+}
 
-load();
+document.getElementById("btn-play").addEventListener("click", () => playing ? pause() : play());
+
+
+
+// ── Gains ──────────────────────────────────────────────────────────────────
+function applyGains() {
+  const hasSolo = state.some(s => s.solo);
+  state.forEach((s, i) => {
+    const g = s.muted ? 0 : (hasSolo && !s.solo ? 0 : s.vol);
+    channels[i].gain.gain.setTargetAtTime(g, ctx.currentTime, 0.02);
+  });
+}
+
+function setVol(i, v) {
+  // cap at 100, never boost
+  const clamped = Math.min(100, Math.max(0, v));
+  state[i].vol = clamped / 100;
+  document.getElementById(`vl-${i}`).textContent = clamped;
+  document.getElementById(`vol-${i}`).value      = clamped;
+  applyGains();
+}
+
+function toggleMute(i) {
+  state[i].muted = !state[i].muted;
+  document.getElementById(`m-${i}`).className    = "btn" + (state[i].muted ? " m-on" : "");
+  document.getElementById(`track-${i}`).className = "track" + (state[i].muted ? " muted" : "");
+  applyGains();
+}
+
+function toggleSolo(i) {
+  state[i].solo = !state[i].solo;
+  document.getElementById(`s-${i}`).className = "btn" + (state[i].solo ? " s-on" : "");
+  applyGains();
+}
+
+// ── Utils ───────────────────────────────────────────────────────────────────
+function fmt(s) {
+  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+}
+
+// Redraw waveforms on resize
+window.addEventListener("resize", () => {
+  STEMS.forEach((s, i) => {
+    if (channels[i].buf) drawWaveform(wfCanvases[i], channels[i].buf, s.color);
+  });
+});
 </script>
 </body>
 </html>
