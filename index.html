@@ -163,31 +163,6 @@ body{
   /* Stick to bottom so it's never hidden behind browser chrome */
   position:sticky;bottom:0;z-index:10;
 }
-.timeline{display:flex;align-items:center;gap:0;padding:0 4px;}
-.time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt2);min-width:36px;flex-shrink:0;}
-.time.r{text-align:right;}
-.prog{
-  flex:1;height:24px;background:transparent;
-  cursor:pointer;position:relative;overflow:visible;
-  display:flex;align-items:center;
-}
-/* The visible 1px track line */
-.prog::before{
-  content:'';position:absolute;left:0;right:0;top:50%;
-  height:1px;background:var(--brd2);
-  transform:translateY(-50%);border-radius:1px;
-}
-.prog-fill{
-  position:absolute;left:0;top:50%;
-  height:1px;transform:translateY(-50%);
-  background:rgba(255,255,255,0.2);
-  border-radius:1px;pointer-events:none;
-}
-.prog-fill::after{
-  content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);
-  width:13px;height:13px;background:#e8eaf5;border-radius:50%;
-  box-shadow:0 0 12px rgba(232,234,245,.4);
-}
 .controls{display:flex;align-items:center;justify-content:center;gap:10px;}
 .ctrl{
   height:36px;padding:0 16px;border:1px solid var(--brd2);background:transparent;
@@ -237,15 +212,8 @@ body{
 <div class="tracks-area" id="tracks-area" style="display:none"></div>
 
 <div class="transport">
-  <div class="timeline">
-    <span class="time" id="cur">0:00</span>
-    <div class="prog" id="prog"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-    <span class="time r" id="tot">0:00</span>
-  </div>
   <div class="controls">
-    <button class="ctrl"     id="btn-back" disabled>−15s</button>
     <button class="play-btn" id="btn-play" disabled>▶</button>
-    <button class="ctrl"     id="btn-fwd"  disabled>+15s</button>
   </div>
 </div>
 
@@ -346,7 +314,10 @@ STEMS.forEach((s, i) => {
 
   document.getElementById(`m-${i}`).addEventListener("click", () => toggleMute(i));
   document.getElementById(`s-${i}`).addEventListener("click", () => toggleSolo(i));
-  document.getElementById(`vol-${i}`).addEventListener("input", e => setVol(i, parseInt(e.target.value)));
+  document.getElementById(`vol-${i}`).addEventListener("input", e => {
+    if (ctx.state === 'suspended') ctx.resume();
+    setVol(i, parseInt(e.target.value));
+  });
 
   // Seek on click or drag (mouse + touch) in waveform
   const wfWrap = document.getElementById(`wf-wrap-${i}`);
@@ -380,20 +351,12 @@ function drawWaveform(canvas, buffer, color) {
   c.lineWidth = 1;
   c.beginPath(); c.moveTo(0, mid); c.lineTo(W, mid); c.stroke();
 
-  // Find peak for normalization
-  let peak = 0;
-  for (let k = 0; k < data.length; k++) {
-    const abs = Math.abs(data[k]);
-    if (abs > peak) peak = abs;
-  }
-  const norm = peak > 0 ? 1 / peak : 1;
-
   // waveform fill
   for (let x = 0; x < W; x++) {
     let mn = 1, mx = -1;
     const off = x * step;
     for (let j = 0; j < step && off+j < data.length; j++) {
-      const v = data[off + j] * norm;
+      const v = data[off + j];
       if (v < mn) mn = v;
       if (v > mx) mx = v;
     }
@@ -444,14 +407,13 @@ function drawWaveform(canvas, buffer, color) {
   document.getElementById("tracks-area").style.display = "flex";
   document.getElementById("led").className             = "led ready";
   document.getElementById("led-label").textContent     = "READY";
-  document.getElementById("tot").textContent           = fmt(dur);
 
   // Defer waveform draw so layout has settled
   requestAnimationFrame(() => {
     STEMS.forEach((s, i) => drawWaveform(wfCanvases[i], channels[i].buf, s.color));
   });
 
-  ["btn-back","btn-play","btn-fwd"].forEach(id =>
+  ["btn-play"].forEach(id =>
     document.getElementById(id).disabled = false
   );
 })();
@@ -489,12 +451,6 @@ function stopPlayback() {
 
 function updateUI(t) {
   curT = t;
-  const pct = dur > 0 ? Math.min(100, (t/dur)*100) : 0;
-  document.getElementById("cur").textContent      = fmt(t);
-  document.getElementById("prog-fill").style.width = pct+"%";
-  // move all playheads & played overlays
-  playheads.forEach(ph       => ph.style.left  = pct+"%");
-  playedOverlays.forEach(po  => po.style.width = pct+"%");
 }
 
 function play() {
@@ -523,18 +479,8 @@ function seek(t) {
 }
 
 document.getElementById("btn-play").addEventListener("click", () => playing ? pause() : play());
-document.getElementById("btn-back").addEventListener("click", () => seek(Math.max(0, curT-15)));
-document.getElementById("btn-fwd") .addEventListener("click", () => seek(Math.min(dur, curT+15)));
 
-// Progress bar: click + drag (mouse + touch)
-function seekFromProgX(clientX) {
-  const r = document.getElementById("prog").getBoundingClientRect();
-  seek(Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * dur);
-}
-const progEl = document.getElementById("prog");
-progEl.addEventListener("click",      e => seekFromProgX(e.clientX));
-progEl.addEventListener("touchstart", e => { e.preventDefault(); seekFromProgX(e.touches[0].clientX); }, { passive: false });
-progEl.addEventListener("touchmove",  e => { e.preventDefault(); seekFromProgX(e.touches[0].clientX); }, { passive: false });
+
 
 // ── Gains ──────────────────────────────────────────────────────────────────
 function applyGains() {
