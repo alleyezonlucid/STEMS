@@ -1,133 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>STEMS — California Ride</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#080809;--surf:#0d0d10;--brd:#18181f;--brd2:#22222c;
-  --txt:#6a6d7e;--txt2:#3a3d4e;--hi:#4a72f5;--hi2:#6088ff;
+  --bg:#080809;--surf:#0d0d10;--surf2:#111116;
+  --brd:#18181f;--brd2:#22222c;
+  --txt:#6a6d7e;--txt2:#3a3d4e;
+  --hi:#4a72f5;--hi2:#6088ff;
+  --track-h:100px;
+  --panel-w:172px;
 }
 html,body{height:100%;background:var(--bg);}
 body{
   font-family:'Barlow Condensed',sans-serif;color:var(--txt);
   display:flex;flex-direction:column;min-height:100vh;
-  background-image:radial-gradient(rgba(255,255,255,0.014) 1px,transparent 1px); 
-  background-size:20px 20px;
+  background-image:radial-gradient(rgba(255,255,255,0.012) 1px,transparent 1px);
+  background-size:20px 20px;overflow:hidden;
 }
-/* HEADER */
+
+/* ── HEADER ── */
 .hdr{
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 28px;border-bottom:1px solid var(--brd);flex-shrink:0;
+  padding:14px 24px;border-bottom:1px solid var(--brd);flex-shrink:0;
 }
 .brand{font-size:9px;font-weight:700;letter-spacing:.35em;color:var(--brd2);text-transform:uppercase;user-select:none;}
-.title{font-size:14px;font-weight:600;letter-spacing:.14em;color:#c8ccd8;text-transform:uppercase;}
-.led-row{display:flex;align-items:center;gap:6px;font-size:8px;font-weight:600;letter-spacing:.2em;color:var(--brd2);min-width:70px;justify-content:flex-end;}
+.title{font-size:13px;font-weight:600;letter-spacing:.14em;color:#c8ccd8;text-transform:uppercase;}
+.led-row{display:flex;align-items:center;gap:6px;font-size:8px;font-weight:600;letter-spacing:.2em;color:var(--brd2);min-width:72px;justify-content:flex-end;}
 .led{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s,box-shadow .3s;}
 .led.loading{background:#f5a623;box-shadow:0 0 6px #f5a62380;animation:blink .7s ease-in-out infinite;}
 .led.ready  {background:#22c55e;box-shadow:0 0 6px #22c55e80;animation:blink 2.4s ease-in-out infinite;}
 .led.error  {background:#ef4444;box-shadow:0 0 6px #ef444480;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
-/* LOADING */
+
+/* ── LOADING ── */
 .overlay{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
 .load-label{font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--txt2);text-transform:uppercase;}
 .load-bar-wrap{width:220px;height:2px;background:var(--brd2);border-radius:1px;overflow:hidden;}
 .load-bar{height:100%;background:linear-gradient(90deg,#2244bb,var(--hi2));border-radius:1px;transition:width .3s;}
 .load-dots{display:flex;gap:8px;}
-.load-dot{width:6px;height:6px;border-radius:50%;opacity:.2;transition:opacity .3s,box-shadow .3s;}
+.load-dot{width:6px;height:6px;border-radius:50%;opacity:.18;transition:opacity .3s,box-shadow .3s;}
 .load-dot.done{opacity:1;}
-/* MIXER */
-.mixer{
-  flex:1;display:flex;justify-content:center;gap:2px;
-  padding:24px 20px 14px;overflow-x:auto;min-height:0;
+
+/* ── TRACKS AREA ── */
+.tracks-area{
+  flex:1;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;min-height:0;
 }
-.ch{
-  flex:1;min-width:82px;max-width:130px;
-  background:var(--surf);border:1px solid var(--brd);border-radius:4px;
-  display:flex;flex-direction:column;align-items:center;padding-bottom:10px;
-  transition:border-color .18s,box-shadow .18s,opacity .18s;overflow:hidden;
+
+/* ── TRACK ROW ── */
+.track{
+  display:flex;align-items:stretch;
+  height:var(--track-h);flex-shrink:0;
+  border-bottom:1px solid var(--brd);
+  transition:opacity .18s;
 }
-.ch:hover {border-color:var(--brd2);}
-.ch.soloed{box-shadow:inset 0 0 0 1px rgba(255,180,0,.15);}
-.ch.muted {opacity:.45;}
-.ch-bar{width:100%;height:2px;flex-shrink:0;border-radius:4px 4px 0 0;}
-.ch-name{
-  font-size:9px;font-weight:700;letter-spacing:.18em;text-align:center;
-  margin:10px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%;
+.track.muted{opacity:.38;}
+
+/* LEFT PANEL */
+.track-panel{
+  width:var(--panel-w);flex-shrink:0;
+  background:var(--surf);
+  border-right:1px solid var(--brd);
+  display:flex;align-items:center;
+  padding:0 12px;gap:10px;
+  position:relative;
 }
-canvas.vu{margin:4px 0 6px;display:block;flex-shrink:0;}
-.ms{display:flex;gap:4px;margin:4px 0;}
+.track-accent{
+  position:absolute;left:0;top:0;bottom:0;
+  width:2px;border-radius:0;
+}
+.track-info{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+.track-name{
+  font-size:11px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.track-ms{display:flex;gap:5px;}
 .btn{
-  width:28px;height:18px;border:1px solid var(--brd2);background:transparent;
+  width:48px;height:26px;
+  border:1px solid var(--brd2);background:transparent;
   color:var(--txt2);font-family:'Barlow Condensed',sans-serif;
-  font-size:9px;font-weight:700;letter-spacing:.04em;border-radius:2px;
-  cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;letter-spacing:.04em;border-radius:3px;
+  cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;
 }
-.btn:hover {color:var(--txt);border-color:#3a3d4e;}
-.btn.m-on  {background:rgba(220,40,40,.18);color:#ff5050;border-color:rgba(220,40,40,.4);}
-.btn.s-on  {background:rgba(240,160,0,.14);color:#f5a623;border-color:rgba(240,160,0,.35);}
-.fader-wrap{flex:1;min-height:88px;display:flex;align-items:center;justify-content:center;overflow:visible;}
-.fader{
-  width:108px;transform:rotate(-90deg);
+.btn:hover {color:var(--txt);border-color:#3a3d4e;background:rgba(255,255,255,.04);}
+.btn.m-on  {background:rgba(220,40,40,.2);color:#ff5050;border-color:rgba(220,40,40,.4);}
+.btn.s-on  {background:rgba(240,160,0,.15);color:#f5a623;border-color:rgba(240,160,0,.38);}
+
+/* VOLUME */
+.vol-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+.vol-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt2);letter-spacing:.04em;}
+.vol-slider{
+  writing-mode:vertical-lr;direction:rtl;
+  width:22px;height:58px;
   -webkit-appearance:none;appearance:none;
-  background:transparent;cursor:pointer;outline:none;margin:0;padding:0;display:block;
+  background:transparent;cursor:pointer;outline:none;padding:0;margin:0;
 }
-.fader::-webkit-slider-runnable-track{height:3px;background:var(--brd2);border-radius:1.5px;}
-.fader::-webkit-slider-thumb{
-  -webkit-appearance:none;width:30px;height:13px;margin-top:-5px;
-  background:linear-gradient(to bottom,#252930,#1b1d24);
-  border:1px solid #3a3d4e;border-radius:2px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 2px 5px rgba(0,0,0,.55);
+.vol-slider::-webkit-slider-runnable-track{
+  width:4px;background:var(--brd2);border-radius:2px;
 }
-.fader::-webkit-slider-thumb:hover{background:linear-gradient(to bottom,#2e3240,#22252e);}
-.fader::-moz-range-track{height:3px;background:var(--brd2);border-radius:1.5px;}
-.fader::-moz-range-thumb{
-  width:30px;height:13px;background:#252930;border:1px solid #3a3d4e;
-  border-radius:2px;box-shadow:0 2px 5px rgba(0,0,0,.55);cursor:pointer;
+.vol-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;height:13px;
+  margin-left:-8px;
+  background:linear-gradient(to right,#2e3240,#22252e);
+  border:1px solid #4a4d5e;border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 5px rgba(0,0,0,.55);
 }
-.vol-num{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--txt2);margin-top:4px;letter-spacing:.04em;}
-/* TRANSPORT */
+.vol-slider::-webkit-slider-thumb:hover{background:linear-gradient(to right,#383c4e,#2a2e3a);}
+.vol-slider::-moz-range-track{width:4px;background:var(--brd2);border-radius:2px;}
+.vol-slider::-moz-range-thumb{
+  width:20px;height:13px;background:#2e3240;
+  border:1px solid #4a4d5e;border-radius:3px;cursor:pointer;
+}
+
+/* WAVEFORM */
+.track-wf{
+  flex:1;position:relative;overflow:hidden;
+  background:var(--surf2);cursor:pointer;
+}
+.track-wf:hover .wf-canvas{opacity:.88;}
+.wf-canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:block;opacity:.72;transition:opacity .2s;
+}
+.played-overlay{
+  position:absolute;top:0;left:0;height:100%;
+  background:rgba(255,255,255,0.025);
+  pointer-events:none;
+}
+.playhead{
+  position:absolute;top:0;bottom:0;left:0;
+  width:1px;background:rgba(255,255,255,0.55);
+  pointer-events:none;
+  box-shadow:0 0 6px rgba(255,255,255,0.2);
+}
+.playhead::before{
+  content:'';position:absolute;top:0;left:-3px;
+  width:7px;height:7px;
+  background:white;border-radius:50%;
+  box-shadow:0 0 8px rgba(255,255,255,0.5);
+}
+
+/* ── TRANSPORT ── */
 .transport{
-  border-top:1px solid var(--brd);padding:14px 28px 20px;
-  display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:var(--surf);
+  border-top:1px solid var(--brd);
+  background:var(--surf);
+  padding:12px 24px 16px;
+  display:flex;flex-direction:column;gap:8px;flex-shrink:0;
 }
 .timeline{display:flex;align-items:center;gap:10px;}
 .time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt2);min-width:36px;flex-shrink:0;}
 .time.r{text-align:right;}
-.prog{flex:1;height:3px;background:var(--brd2);border-radius:1.5px;cursor:pointer;position:relative;overflow:visible;}
-.prog-fill{height:100%;background:linear-gradient(90deg,#2244bb,var(--hi2));border-radius:1.5px;pointer-events:none;position:relative;}
+.prog{
+  flex:1;height:3px;background:var(--brd2);
+  border-radius:1.5px;cursor:pointer;position:relative;overflow:visible;
+}
+.prog-fill{
+  height:100%;
+  background:linear-gradient(90deg,#2244bb,var(--hi2));
+  border-radius:1.5px;pointer-events:none;position:relative;
+}
 .prog-fill::after{
   content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);
-  width:9px;height:9px;background:var(--hi2);border-radius:50%;box-shadow:0 0 10px rgba(96,136,255,.55);
+  width:9px;height:9px;background:var(--hi2);border-radius:50%;
+  box-shadow:0 0 10px rgba(96,136,255,.55);
 }
 .controls{display:flex;align-items:center;justify-content:center;gap:10px;}
 .ctrl{
-  height:30px;padding:0 12px;border:1px solid var(--brd2);background:transparent;
+  height:36px;padding:0 16px;border:1px solid var(--brd2);background:transparent;
   color:var(--txt2);font-family:'Barlow Condensed',sans-serif;
-  font-size:10px;font-weight:600;letter-spacing:.06em;
-  border-radius:3px;cursor:pointer;transition:all .13s;text-transform:uppercase;white-space:nowrap;
+  font-size:11px;font-weight:600;letter-spacing:.06em;
+  border-radius:4px;cursor:pointer;transition:all .13s;text-transform:uppercase;white-space:nowrap;
 }
-.ctrl:hover   {color:var(--txt);border-color:#3a3d4e;}
-.ctrl:disabled{opacity:.3;cursor:not-allowed;}
+.ctrl:hover   {color:var(--txt);border-color:#3a3d4e;background:rgba(255,255,255,.04);}
+.ctrl:disabled{opacity:.28;cursor:not-allowed;}
 .play-btn{
-  width:46px;height:46px;border-radius:50%;
-  border:1.5px solid #1e3a99;background:rgba(30,58,153,.1);
-  color:#4060cc;font-size:17px;cursor:pointer;
+  width:54px;height:54px;border-radius:50%;
+  border:1.5px solid #1e3a99;background:rgba(30,58,153,.12);
+  color:#4060cc;font-size:20px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:all .18s;
 }
-.play-btn:hover  {background:rgba(30,58,153,.22);border-color:#2a50bb;color:var(--hi2);transform:scale(1.06);}
-.play-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
-.play-btn.on{background:rgba(30,58,153,.2);box-shadow:0 0 22px rgba(96,136,255,.2);}
-@media(max-width:540px){
-  .mixer{padding:12px 6px 8px;gap:1px;}
-  .ch   {min-width:58px;}
-  .transport{padding:10px 14px 14px;}
-  .hdr  {padding:12px 14px;}
-  .ctrl {padding:0 8px;font-size:9px;}
+.play-btn:hover  {background:rgba(30,58,153,.25);border-color:#2a50bb;color:var(--hi2);transform:scale(1.07);}
+.play-btn:disabled{opacity:.28;cursor:not-allowed;transform:none;}
+.play-btn.on{background:rgba(30,58,153,.2);box-shadow:0 0 22px rgba(96,136,255,.22);}
+
+@media(max-width:600px){
+  :root{--panel-w:120px;--track-h:84px;}
+  .transport{padding:10px 14px 16px;}
+  .hdr{padding:10px 14px;}
+  .ctrl{padding:0 10px;font-size:10px;height:32px;}
+  .play-btn{width:46px;height:46px;font-size:17px;}
 }
 </style>
 </head>
@@ -148,7 +216,7 @@ canvas.vu{margin:4px 0 6px;display:block;flex-shrink:0;}
   <div class="load-dots" id="load-dots"></div>
 </div>
 
-<div class="mixer" id="mixer" style="display:none"></div>
+<div class="tracks-area" id="tracks-area" style="display:none"></div>
 
 <div class="transport">
   <div class="timeline">
@@ -157,16 +225,16 @@ canvas.vu{margin:4px 0 6px;display:block;flex-shrink:0;}
     <span class="time r" id="tot">0:00</span>
   </div>
   <div class="controls">
-    <button class="ctrl" id="btn-rst" disabled>⏮ RST</button>
-    <button class="ctrl" id="btn-back" disabled>−15s</button>
+    <button class="ctrl"     id="btn-rst"  disabled>⏮ RST</button>
+    <button class="ctrl"     id="btn-back" disabled>−15s</button>
     <button class="play-btn" id="btn-play" disabled>▶</button>
-    <button class="ctrl" id="btn-fwd" disabled>+15s</button>
-    <button class="ctrl" id="btn-end" disabled>END ⏭</button>
+    <button class="ctrl"     id="btn-fwd"  disabled>+15s</button>
+    <button class="ctrl"     id="btn-end"  disabled>END ⏭</button>
   </div>
 </div>
 
 <script>
-const BASE = "https://raw.githubusercontent.com/alleyezonlucid/STEMS/main";
+const BASE  = "https://raw.githubusercontent.com/alleyezonlucid/STEMS/main";
 const STEMS = [
   { id:"acordes", label:"ACORDES", color:"#3db8ff", url:`${BASE}/ACORDES.mp3` },
   { id:"bass",    label:"BASS",    color:"#ff8c21", url:`${BASE}/BASS.mp3`    },
@@ -176,96 +244,139 @@ const STEMS = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
-const state = STEMS.map(s => ({ vol:0.8, muted:false, solo:false }));
-let playing = false, curT = 0, dur = 0, startAt = 0, pauseAt = 0;
-let raf = null, vuraf = null;
+const state = STEMS.map(() => ({ vol:1, muted:false, solo:false }));
+let playing=false, curT=0, dur=0, startAt=0, pauseAt=0, raf=null;
+const wfImageData = [];  // stored waveform imageData per track
 
 // ── Audio ──────────────────────────────────────────────────────────────────
 const AC = window.AudioContext || window.webkitAudioContext;
 const ctx = new AC();
-const master = ctx.createGain();
-master.gain.value = 0.88;
-master.connect(ctx.destination);
+const master = ctx.createGain(); master.gain.value = 0.88;
+
+// Brick-wall limiter — prevents inter-stem summing from ever clipping
+const limiter = ctx.createDynamicsCompressor();
+limiter.threshold.value = -0.5;   // dBFS — engages just before 0
+limiter.knee.value      =  0;     // hard knee
+limiter.ratio.value     =  20;    // 20:1 ≈ brick wall
+limiter.attack.value    =  0.001; // 1ms — catches transients fast
+limiter.release.value   =  0.1;   // 100ms — transparent release
+master.connect(limiter);
+limiter.connect(ctx.destination);
 
 const channels = STEMS.map(() => {
-  const gain = ctx.createGain(); gain.gain.value = 0.8;
-  const analyser = ctx.createAnalyser();
-  analyser.fftSize = 128; analyser.smoothingTimeConstant = 0.72;
-  gain.connect(analyser); analyser.connect(master);
-  return { gain, analyser, buf: null, src: null };
+  const gain = ctx.createGain(); gain.gain.value = 1.0;
+  gain.connect(master);
+  return { gain, buf:null, src:null };
 });
 
-// ── Build channel strips ───────────────────────────────────────────────────
-const mixer = document.getElementById("mixer");
-const canvases = [];
-const dotsEl   = document.getElementById("load-dots");
+// ── Build track DOM ────────────────────────────────────────────────────────
+const tracksArea = document.getElementById("tracks-area");
+const dotsEl     = document.getElementById("load-dots");
+const wfCanvases = [];
+const playheads  = [];
+const playedOverlays = [];
 
 STEMS.forEach((s, i) => {
   // loading dot
   const dot = document.createElement("div");
   dot.className = "load-dot";
-  dot.style.background = s.color;
-  dot.style.color = s.color;
+  dot.style.cssText = `background:${s.color};color:${s.color};box-shadow:0 0 8px ${s.color};`;
   dotsEl.appendChild(dot);
 
-  // channel strip
-  const ch = document.createElement("div");
-  ch.className = "ch";
-  ch.id = `ch-${i}`;
-  ch.innerHTML = `
-    <div class="ch-bar" style="background:${s.color}"></div>
-    <div class="ch-name" style="color:${s.color}">${s.label}</div>
-    <canvas class="vu" width="22" height="120" id="vu-${i}"></canvas>
-    <div class="ms">
-      <button class="btn" id="m-${i}">M</button>
-      <button class="btn" id="s-${i}">S</button>
+  // track row
+  const track = document.createElement("div");
+  track.className = "track"; track.id = `track-${i}`;
+  track.innerHTML = `
+    <div class="track-panel">
+      <div class="track-accent" style="background:${s.color}"></div>
+      <div class="track-info">
+        <div class="track-name" style="color:${s.color}">${s.label}</div>
+        <div class="track-ms">
+          <button class="btn" id="m-${i}">MUTE</button>
+          <button class="btn" id="s-${i}">SOLO</button>
+        </div>
+      </div>
+      <div class="vol-wrap">
+        <input type="range" class="vol-slider" id="vol-${i}"
+               min="0" max="100" step="1" value="100" />
+        <div class="vol-label" id="vl-${i}">100</div>
+      </div>
     </div>
-    <div class="fader-wrap">
-      <input type="range" class="fader" id="f-${i}" min="0" max="1" step="0.01" value="0.8" />
+    <div class="track-wf" id="wf-wrap-${i}">
+      <canvas class="wf-canvas" id="wf-${i}"></canvas>
+      <div class="played-overlay" id="po-${i}" style="width:0%"></div>
+      <div class="playhead"       id="ph-${i}" style="left:0%"></div>
     </div>
-    <div class="vol-num" id="v-${i}">80</div>
   `;
-  mixer.appendChild(ch);
-  canvases.push(document.getElementById(`vu-${i}`));
+  tracksArea.appendChild(track);
+
+  wfCanvases.push(document.getElementById(`wf-${i}`));
+  playheads.push(document.getElementById(`ph-${i}`));
+  playedOverlays.push(document.getElementById(`po-${i}`));
 
   document.getElementById(`m-${i}`).addEventListener("click", () => toggleMute(i));
   document.getElementById(`s-${i}`).addEventListener("click", () => toggleSolo(i));
-  document.getElementById(`f-${i}`).addEventListener("input", e => setVol(i, parseFloat(e.target.value)));
+  document.getElementById(`vol-${i}`).addEventListener("input", e => setVol(i, parseInt(e.target.value)));
+  document.getElementById(`wf-wrap-${i}`).addEventListener("click", e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    seek(((e.clientX - r.left) / r.width) * dur);
+  });
 });
 
-// ── VU meters ─────────────────────────────────────────────────────────────
-function drawVU(canvas, rms) {
-  const c = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
-  c.clearRect(0,0,W,H);
-  const N=22, gap=2, segH=(H-gap*(N-1))/N;
-  const active = Math.round((rms/255)*N);
-  for (let i=0;i<N;i++) {
-    const y = H-(i+1)*(segH+gap)+gap;
-    if (i < active) {
-      const r=i/N;
-      const col = r<.58?"#22c55e":r<.8?"#eab308":"#ef4444";
-      c.fillStyle=col; c.shadowBlur=4; c.shadowColor=col;
-    } else { c.fillStyle="rgba(255,255,255,0.04)"; c.shadowBlur=0; }
-    c.fillRect(0,y,W,segH);
-  }
-}
-function vuLoop() {
-  vuraf = requestAnimationFrame(vuLoop);
-  channels.forEach((ch,i) => {
-    const cv = canvases[i]; if(!cv) return;
-    const arr = new Uint8Array(ch.analyser.frequencyBinCount);
-    ch.analyser.getByteFrequencyData(arr);
-    drawVU(cv, arr.reduce((a,b)=>a+b,0)/arr.length);
-  });
-}
-vuLoop();
+// ── Draw waveform ──────────────────────────────────────────────────────────
+function drawWaveform(canvas, buffer, color) {
+  const wrap  = canvas.parentElement;
+  const W     = wrap.clientWidth  || 800;
+  const H     = wrap.clientHeight || 88;
+  canvas.width  = W;
+  canvas.height = H;
+  const c    = canvas.getContext("2d");
+  const data = buffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(data.length / W));
+  const mid  = H / 2;
 
-// ── Load stems ────────────────────────────────────────────────────────────
+  // background
+  c.fillStyle = "transparent";
+  c.clearRect(0, 0, W, H);
+
+  // center line
+  c.strokeStyle = color + "18";
+  c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, mid); c.lineTo(W, mid); c.stroke();
+
+  // waveform fill
+  for (let x = 0; x < W; x++) {
+    let mn = 1, mx = -1;
+    const off = x * step;
+    for (let j = 0; j < step && off+j < data.length; j++) {
+      const v = data[off + j];
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+    const yTop = Math.floor((1 - mx) / 2 * H);
+    const yBot = Math.ceil ((1 - mn) / 2 * H);
+    const h    = Math.max(1, yBot - yTop);
+
+    // gradient: bright core, faded edges
+    const grd = c.createLinearGradient(0, yTop, 0, yBot);
+    grd.addColorStop(0,   color + "22");
+    grd.addColorStop(0.4, color + "bb");
+    grd.addColorStop(0.5, color + "ff");
+    grd.addColorStop(0.6, color + "bb");
+    grd.addColorStop(1,   color + "22");
+    c.fillStyle = grd;
+    c.fillRect(x, yTop, 1, h);
+  }
+
+  // store for playhead redraws
+  wfImageData[wfCanvases.indexOf(canvas)] = c.getImageData(0, 0, W, H);
+}
+
+// ── Load stems ─────────────────────────────────────────────────────────────
 (async () => {
   const dots = dotsEl.querySelectorAll(".load-dot");
   let maxDur = 0;
-  for (let i=0; i<STEMS.length; i++) {
+  for (let i = 0; i < STEMS.length; i++) {
     try {
       const res = await fetch(STEMS[i].url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -274,7 +385,7 @@ vuLoop();
       if (buf.duration > maxDur) { maxDur = buf.duration; dur = maxDur; }
       dots[i].classList.add("done");
       const pct = Math.round(((i+1)/STEMS.length)*100);
-      document.getElementById("load-bar").style.width = pct+"%";
+      document.getElementById("load-bar").style.width  = pct+"%";
       document.getElementById("led-label").textContent = pct+"%";
     } catch(err) {
       console.error("Stem load failed:", STEMS[i].label, err);
@@ -283,18 +394,25 @@ vuLoop();
       return;
     }
   }
-  // Ready
-  document.getElementById("overlay").style.display = "none";
-  document.getElementById("mixer").style.display    = "flex";
-  document.getElementById("led").className   = "led ready";
-  document.getElementById("led-label").textContent  = "READY";
-  document.getElementById("tot").textContent = fmt(dur);
-  ["btn-rst","btn-back","btn-play","btn-fwd","btn-end"].forEach(id => {
-    document.getElementById(id).disabled = false;
+
+  // Show tracks, draw waveforms
+  document.getElementById("overlay").style.display     = "none";
+  document.getElementById("tracks-area").style.display = "flex";
+  document.getElementById("led").className             = "led ready";
+  document.getElementById("led-label").textContent     = "READY";
+  document.getElementById("tot").textContent           = fmt(dur);
+
+  // Defer waveform draw so layout has settled
+  requestAnimationFrame(() => {
+    STEMS.forEach((s, i) => drawWaveform(wfCanvases[i], channels[i].buf, s.color));
   });
+
+  ["btn-rst","btn-back","btn-play","btn-fwd","btn-end"].forEach(id =>
+    document.getElementById(id).disabled = false
+  );
 })();
 
-// ── Playback ──────────────────────────────────────────────────────────────
+// ── Playback ───────────────────────────────────────────────────────────────
 function startSrcs(offset) {
   const now = ctx.currentTime;
   channels.forEach(ch => {
@@ -307,43 +425,52 @@ function startSrcs(offset) {
   });
   startAt = now - offset;
 }
+
 function startTick() {
   const tick = () => {
     const elapsed = ctx.currentTime - startAt;
-    if (elapsed >= dur) { stopPlayback(); updateProgress(0); return; }
-    updateProgress(elapsed);
+    if (elapsed >= dur) { stopPlayback(); updateUI(0); return; }
+    updateUI(elapsed);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
 }
+
 function stopPlayback() {
   playing = false; pauseAt = 0;
-  document.getElementById("btn-play").className = "play-btn";
+  document.getElementById("btn-play").className   = "play-btn";
   document.getElementById("btn-play").textContent = "▶";
   cancelAnimationFrame(raf);
 }
-function updateProgress(t) {
+
+function updateUI(t) {
   curT = t;
-  document.getElementById("cur").textContent = fmt(t);
-  document.getElementById("prog-fill").style.width = (dur>0 ? Math.min(100,(t/dur)*100) : 0)+"%";
+  const pct = dur > 0 ? Math.min(100, (t/dur)*100) : 0;
+  document.getElementById("cur").textContent      = fmt(t);
+  document.getElementById("prog-fill").style.width = pct+"%";
+  // move all playheads & played overlays
+  playheads.forEach(ph       => ph.style.left  = pct+"%");
+  playedOverlays.forEach(po  => po.style.width = pct+"%");
 }
 
 function play() {
   if (ctx.state === "suspended") ctx.resume();
   startSrcs(pauseAt); playing = true; startTick();
-  document.getElementById("btn-play").className = "play-btn on";
+  document.getElementById("btn-play").className   = "play-btn on";
   document.getElementById("btn-play").textContent = "⏸";
 }
+
 function pause() {
   pauseAt = ctx.currentTime - startAt;
   channels.forEach(ch => { try { ch.src?.stop(); } catch {} });
   cancelAnimationFrame(raf); playing = false;
-  document.getElementById("btn-play").className = "play-btn";
+  document.getElementById("btn-play").className   = "play-btn";
   document.getElementById("btn-play").textContent = "▶";
 }
+
 function seek(t) {
   const c = Math.max(0, Math.min(dur, t));
-  pauseAt = c; updateProgress(c);
+  pauseAt = c; updateUI(c);
   if (playing) {
     cancelAnimationFrame(raf);
     channels.forEach(ch => { try { ch.src?.stop(); } catch {} });
@@ -352,16 +479,16 @@ function seek(t) {
 }
 
 document.getElementById("btn-play").addEventListener("click", () => playing ? pause() : play());
-document.getElementById("btn-rst").addEventListener("click",  () => seek(0));
+document.getElementById("btn-rst") .addEventListener("click", () => seek(0));
 document.getElementById("btn-back").addEventListener("click", () => seek(Math.max(0, curT-15)));
-document.getElementById("btn-fwd").addEventListener("click",  () => seek(Math.min(dur, curT+15)));
-document.getElementById("btn-end").addEventListener("click",  () => seek(dur));
-document.getElementById("prog").addEventListener("click", e => {
+document.getElementById("btn-fwd") .addEventListener("click", () => seek(Math.min(dur, curT+15)));
+document.getElementById("btn-end") .addEventListener("click", () => seek(dur));
+document.getElementById("prog")    .addEventListener("click", e => {
   const r = document.getElementById("prog").getBoundingClientRect();
   seek(((e.clientX - r.left) / r.width) * dur);
 });
 
-// ── Gains ─────────────────────────────────────────────────────────────────
+// ── Gains ──────────────────────────────────────────────────────────────────
 function applyGains() {
   const hasSolo = state.some(s => s.solo);
   state.forEach((s, i) => {
@@ -369,32 +496,40 @@ function applyGains() {
     channels[i].gain.gain.setTargetAtTime(g, ctx.currentTime, 0.02);
   });
 }
+
 function setVol(i, v) {
-  state[i].vol = v;
-  document.getElementById(`v-${i}`).textContent = Math.round(v*100);
-  applyGains();
-}
-function toggleMute(i) {
-  state[i].muted = !state[i].muted;
-  const btn = document.getElementById(`m-${i}`);
-  btn.className = "btn" + (state[i].muted ? " m-on" : "");
-  document.getElementById(`ch-${i}`).className = "ch" +
-    (state[i].muted?" muted":"") + (state[i].solo?" soloed":"");
-  applyGains();
-}
-function toggleSolo(i) {
-  state[i].solo = !state[i].solo;
-  const btn = document.getElementById(`s-${i}`);
-  btn.className = "btn" + (state[i].solo ? " s-on" : "");
-  document.getElementById(`ch-${i}`).className = "ch" +
-    (state[i].muted?" muted":"") + (state[i].solo?" soloed":"");
+  // cap at 100, never boost
+  const clamped = Math.min(100, Math.max(0, v));
+  state[i].vol = clamped / 100;
+  document.getElementById(`vl-${i}`).textContent = clamped;
+  document.getElementById(`vol-${i}`).value      = clamped;
   applyGains();
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────
+function toggleMute(i) {
+  state[i].muted = !state[i].muted;
+  document.getElementById(`m-${i}`).className    = "btn" + (state[i].muted ? " m-on" : "");
+  document.getElementById(`track-${i}`).className = "track" + (state[i].muted ? " muted" : "");
+  applyGains();
+}
+
+function toggleSolo(i) {
+  state[i].solo = !state[i].solo;
+  document.getElementById(`s-${i}`).className = "btn" + (state[i].solo ? " s-on" : "");
+  applyGains();
+}
+
+// ── Utils ───────────────────────────────────────────────────────────────────
 function fmt(s) {
   return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
 }
+
+// Redraw waveforms on resize
+window.addEventListener("resize", () => {
+  STEMS.forEach((s, i) => {
+    if (channels[i].buf) drawWaveform(wfCanvases[i], channels[i].buf, s.color);
+  });
+});
 </script>
 </body>
 </html>
